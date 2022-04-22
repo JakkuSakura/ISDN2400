@@ -1,28 +1,47 @@
-from flask.app import Flask
-from flask import Response, send_file
+import logging
+import os.path
+from io import BytesIO
+
+import tornado.ioloop
+import tornado.web
+
 from drivers import ArmDriver
-from typing import Optional
 
-app = Flask("web")
+logger = logging.getLogger(__name__)
 
-driver: Optional[ArmDriver] = None
+from PIL import Image
 
-
-def serve_pil_image(pil_img):
-    img_io = BytesIO()
-    pil_img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/jpeg')
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("index.html")
 
 
-@app.route('/screenshot')
-def capture_image():
-    image = driver and driver.capture_image()
-    if image is None:
-        return Response('{"error":"image not ready"}', status=503, mimetype='application/json')
+class ScreenshotHandler(tornado.web.RequestHandler):
+    def initialize(self, arm_driver):
+        self.arm_driver = arm_driver
 
-    return serve_pil_image(image)
+    async def get(self):
+        img_io = BytesIO()
+        image = self.arm_driver.capture_image()
+        if not image:
+            image = Image.new('RGB', (600, 400))
+
+        image.save(img_io, 'JPEG', quality=70)
+        img_io.seek(0)
+        self.set_header("Content-type", "image/jpeg")
+        self.write(img_io.read())
+        await self.finish()
 
 
-if __name__ == '__main__':
-    app.run()
+
+def make_app(driver: ArmDriver):
+    settings = {
+        'template_path': os.path.join(__file__, '..', '..', '..', 'template'),
+        'static_path': os.path.join(__file__, '..', '..', '..', 'static'),
+    }
+    return tornado.web.Application([
+        (r"/", MainHandler),
+        (r"/screenshot", ScreenshotHandler, dict(arm_driver=driver))
+    ], **settings)
+
+
