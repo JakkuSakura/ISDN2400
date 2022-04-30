@@ -23,5 +23,5 @@ class ArmDriver:
         pass
 
     def capture_image(self):
-        logger.debug('capture image %s')
+        logger.debug('capture image')
         pass

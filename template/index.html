@@ -35,11 +35,6 @@
 <img src="/screenshot" alt="Screenshot" id="screenshot"/>
 
 <script>
-    function refresh_screenshot() {
-        $("#screenshot").attr("src", "/screenshot?t=" + new Date().getTime());
-    }
-
-
     function on_joystick_change_left(jsk) {
         console.log(`chassis dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
         $.post(
@@ -77,6 +72,9 @@
         inner_radius: 70,
         callback: on_joystick_change_right
     });
+    function refresh_screenshot() {
+        $("#screenshot").attr("src", "/screenshot?t=" + new Date().getTime());
+    }
     $(document).ready(function () {
         setInterval(refresh_screenshot, 200);
     });

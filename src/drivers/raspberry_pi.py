@@ -31,10 +31,15 @@ class RaspberryPiArmDriver(ArmDriver):
         self.logger.debug('arm spray %s', time)
         pass
 
-    def capture_image(self):
+    def capture_image(self) -> Image:
         self.logger.debug('capture image %s')
         return_value, image = self.camera.read()
         # You may need to convert the color.
         img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         im_pil = Image.fromarray(img)
         return im_pil
+
+    def capture_image_raw(self):
+        self.logger.debug('capture image raw %s')
+        return_value, image = self.camera.read()
+        return image
