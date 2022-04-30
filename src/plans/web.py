@@ -41,7 +41,7 @@ def make_app(driver: ArmDriver):
     }
     return tornado.web.Application([
         (r"/", MainHandler),
-        (r"/screenshot", ScreenshotHandler, dict(arm_driver=driver))
+        (r"/screenshot", ScreenshotHandler, dict(arm_driver=driver)),
     ], **settings)
 
 

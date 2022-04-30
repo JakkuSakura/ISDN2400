@@ -23,10 +23,15 @@
     src="https://code.jquery.com/jquery-3.6.0.min.js"
     integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
     crossorigin="anonymous"></script>
+
+  <script type="text/javascript" src="/static/joystick.js"></script>
+
 </head>
 
 <body>
-<h1>Hi</h1>
+<h1>deCOVID Car Controller</h1>
+<div id="status">
+</div>
 <img src="/screenshot" alt="Screenshot" id="screenshot"/>
 
 <script>
@@ -34,6 +39,27 @@
         $("#screenshot").attr("src", "/screenshot?t=" + new Date().getTime());
     }
 
+
+    var status = document.getElementById('status');
+
+    function on_joystick_change(jsk) {
+        console.log(`dx ${jsk.dx} dy ${jsk.dy}`);
+    }
+
+    var joystick_left = new JoyStick({
+        radius: 80,
+        x: window.innerWidth / 2 - 180,
+        y: window.innerHeight / 2,
+        inner_radius: 70,
+        callback: on_joystick_change
+    });
+    var joystick_right = new JoyStick({
+        radius: 80,
+        x: window.innerWidth / 2 + 180,
+        y: window.innerHeight / 2,
+        inner_radius: 70,
+        callback: on_joystick_change
+    });
     $(document).ready(function () {
         setInterval(refresh_screenshot, 200);
     });
