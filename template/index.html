@@ -40,10 +40,27 @@
     }
 
 
-    var status = document.getElementById('status');
-
-    function on_joystick_change(jsk) {
-        console.log(`dx ${jsk.dx} dy ${jsk.dy}`);
+    function on_joystick_change_left(jsk) {
+        console.log(`chassis dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
+        $.post(
+            '/move', {
+                udx: jsk.udx,
+                udy: -jsk.udy
+            }
+        )
+    }
+    function on_joystick_change_right(jsk) {
+        console.log(`arm dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
+        $.post(
+            '/rotate', {
+                speed: jsk.udx
+            }
+        )
+        $.post(
+            '/arm', {
+                speed: -jsk.udy
+            }
+        )
     }
 
     var joystick_left = new JoyStick({
@@ -51,14 +68,14 @@
         x: window.innerWidth / 2 - 180,
         y: window.innerHeight / 2,
         inner_radius: 70,
-        callback: on_joystick_change
+        callback: on_joystick_change_left
     });
     var joystick_right = new JoyStick({
         radius: 80,
         x: window.innerWidth / 2 + 180,
         y: window.innerHeight / 2,
         inner_radius: 70,
-        callback: on_joystick_change
+        callback: on_joystick_change_right
     });
     $(document).ready(function () {
         setInterval(refresh_screenshot, 200);
