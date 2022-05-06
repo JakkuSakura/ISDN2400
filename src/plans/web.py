@@ -13,7 +13,8 @@ from PIL import Image
 import sys
 import math
 import os
-
+from detect import detect
+import cv2
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")
@@ -24,12 +25,13 @@ class ScreenshotHandler(tornado.web.RequestHandler):
         self.arm_driver = arm_driver
 
     async def get(self):
+        image = self.arm_driver.capture_image_raw()
+        annotated, results = detect(image)
+        logger.info("Result %s", results)
+        img = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+        im_pil = Image.fromarray(img)
         img_io = BytesIO()
-        image = self.arm_driver.capture_image()
-        if not image:
-            image = Image.new('RGB', (600, 400))
-
-        image.save(img_io, 'JPEG', quality=70)
+        im_pil.save(img_io, 'JPEG', quality=50)
         img_io.seek(0)
         self.set_header("Content-type", "image/jpeg")
         self.write(img_io.read())

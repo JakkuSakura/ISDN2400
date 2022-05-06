@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 
 logger = logging.getLogger('drivers')
 
@@ -22,6 +23,6 @@ class ArmDriver:
         logger.debug('arm spray %s', time)
         pass
 
-    def capture_image(self):
-        logger.debug('capture image')
-        pass
+    def capture_image_raw(self):
+        self.logger.debug('capture image')
+        return np.zeros((600, 800, 3), np.uint8)

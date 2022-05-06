@@ -65,7 +65,8 @@ def process_image(x):
     return img
 
 @torch.no_grad()
-def detect(im0s, s):
+def detect(im0s):
+    s = ''
     im = process_image(im0s)
     im = torch.from_numpy(im).to(device)
     im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -118,7 +119,7 @@ def main():
     _, img = video.read()
     _, img = video.read()
     _, img = video.read()
-    annotated, results = detect(img, '')
+    annotated, results = detect(img)
     print(results)
 
 
