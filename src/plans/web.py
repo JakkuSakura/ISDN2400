@@ -10,8 +10,9 @@ from drivers import ArmDriver, ChassisDriver
 logger = logging.getLogger(__name__)
 
 from PIL import Image
+import sys
 import math
-
+import os
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -68,6 +69,17 @@ class ArmVerticalHandler(tornado.web.RequestHandler):
         await self.arm.arm_up(speed)
         await self.finish()
 
+class UpgradeHandler(tornado.web.RequestHandler):
+    async def post(self):
+        logger.info("Upgrading")
+        os.system("git pull")
+        args = sys.argv[:]
+        logger.info('Re-spawning %s', ' '.join(args))
+
+        args.insert(0, sys.executable)
+        self.write("Restarting")
+        await self.finish()
+        os.execv(sys.executable, args)
 
 def make_app(arm_driver: ArmDriver, chassis_driver: ChassisDriver):
     settings = {
@@ -80,5 +92,6 @@ def make_app(arm_driver: ArmDriver, chassis_driver: ChassisDriver):
         (r"/move", MovementHandler, dict(chassis=chassis_driver)),
         (r"/rotate", RotationHandler, dict(chassis=chassis_driver)),
         (r"/arm", ArmVerticalHandler, dict(arm=arm_driver)),
+        (r"/upgrade", UpgradeHandler)
 
     ], **settings)
