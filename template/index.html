@@ -18,7 +18,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="css/styles.css?v=1.0">
+  <link rel="stylesheet" href="/static/styles.css?v=1.0">
   <script
     src="https://code.jquery.com/jquery-3.6.0.min.js"
     integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
@@ -29,12 +29,14 @@
 </head>
 
 <body>
-<h1>deCOVID Car Controller</h1>
-<div id="status">
+<div class="centered">
+  <h1>deCOVID Car Controller</h1>
+  <div id="status">
+  </div>
+  <img src="/screenshot" alt="Screenshot" id="screenshot"/>
+  <br/>
+  <button id="upgrade">Upgrade program</button>
 </div>
-<img src="/screenshot" alt="Screenshot" id="screenshot"/>
-<br/>
-<button id="upgrade">Upgrade program</button>
 <script>
     function on_joystick_change_left(jsk) {
         console.log(`chassis dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
@@ -45,6 +47,7 @@
             }
         )
     }
+
     function on_joystick_change_right(jsk) {
         console.log(`arm dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
         $.post(
@@ -73,9 +76,11 @@
         inner_radius: 70,
         callback: on_joystick_change_right
     });
+
     function refresh_screenshot() {
         $("#screenshot").attr("src", "/screenshot?t=" + new Date().getTime());
     }
+
     $(document).ready(function () {
         setInterval(refresh_screenshot, 200);
     });

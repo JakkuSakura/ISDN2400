@@ -20,15 +20,32 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("index.html")
 
 
+
 class ScreenshotHandler(tornado.web.RequestHandler):
     def initialize(self, arm_driver: ArmDriver):
         self.arm_driver = arm_driver
 
+    def get_focus_range(self, width, height, results):
+        if len(results) == 0:
+            return 0, 0, width, height
+
+        x_min, y_min = width, height
+        x_max, y_max = 0, 0
+        for xyxy, tag in results:
+            x_min = min(x_min, xyxy[0])
+            y_min = min(y_min, xyxy[1])
+            x_max = max(x_max, xyxy[2])
+            y_max = max(y_max, xyxy[3])
+        return int(x_min), int(y_min), int(x_max), int(y_max)
+
     async def get(self):
         image = self.arm_driver.capture_image_raw()
         annotated, results = detect(image)
-        logger.info("Result %s", results)
-        img = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+        x_min, y_min, x_max, y_max = self.get_focus_range(image.shape[0], image.shape[1], results)
+        logger.info("Result %s %s %s %s %s", results, x_min, y_min, x_max, y_max)
+        cropped = annotated[y_min:y_max, x_min:x_max]
+        # resized = cv2.resize(cropped, (360, 360))
+        img = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
         im_pil = Image.fromarray(img)
         img_io = BytesIO()
         im_pil.save(img_io, 'JPEG', quality=50)
