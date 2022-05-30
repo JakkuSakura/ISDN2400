@@ -100,7 +100,7 @@ class UpgradeHandler(tornado.web.RequestHandler):
         await self.finish()
         os.execv(sys.executable, args)
 
-def make_app(arm_driver: ArmDriver, chassis_driver: ChassisDriver):
+def make_app(chassis_driver: ChassisDriver, arm_driver: ArmDriver):
     settings = {
         'template_path': os.path.join(__file__, '..', '..', '..', 'template'),
         'static_path': os.path.join(__file__, '..', '..', '..', 'static'),
@@ -114,3 +114,5 @@ def make_app(arm_driver: ArmDriver, chassis_driver: ChassisDriver):
         (r"/upgrade", UpgradeHandler)
 
     ], **settings)
+
+
