@@ -43,25 +43,29 @@
 
     function on_joystick_change_left() {
         console.log(`chassis udx ${jsk_ludx} udy ${jsk_ludy}`);
-        $.post(
-            '/move', {
-                udx: jsk_ludx,
-                udy: -jsk_ludy
-            }
-        )
+        if (Math.abs(jsk_rudx) < 0.5) {
+            $.post(
+                '/move', {
+                    udx: jsk_ludx,
+                    udy: -jsk_ludy
+                }
+            )
+        }
     }
+
     setInterval(on_joystick_change_left, 1000);
 
     var jsk_rudx = 0;
     var jsk_rudy = 0;
+
     function on_joystick_change_right() {
         console.log(`arm udx ${jsk_rudx} udy ${jsk_rudy}`);
         if (Math.pow(jsk_ludx * jsk_ludx + jsk_ludy * jsk_ludy, 2) < 0.5) {
-          $.post(
-              '/rotate', {
-                  speed: jsk_rudx
-              }
-          );
+            $.post(
+                '/rotate', {
+                    speed: jsk_rudx
+                }
+            );
         }
 
         $.post(
@@ -70,6 +74,7 @@
             }
         )
     }
+
     setInterval(on_joystick_change_right, 1000);
 
 
@@ -97,17 +102,17 @@
     function refresh_screenshot() {
         $.ajax({
             url: "/screenshot?t=" + new Date().getTime(),
-            cache:false,
-            xhrFields:{
+            cache: false,
+            xhrFields: {
                 responseType: 'blob'
             },
-            success: function(data){
+            success: function (data) {
                 var url = window.URL || window.webkitURL;
                 var imageUrl = url.createObjectURL(data);
                 $("#screenshot").attr("src", imageUrl);
                 refresh_screenshot()
             },
-            error:function(){
+            error: function () {
                 console.error("Failed to get screenshot");
             }
         });
