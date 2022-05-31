@@ -78,18 +78,34 @@
     });
 
     function refresh_screenshot() {
-        $("#screenshot").attr("src", "/screenshot?t=" + new Date().getTime());
+        $.ajax({
+            url: "/screenshot?t=" + new Date().getTime(),
+            cache:false,
+            xhrFields:{
+                responseType: 'blob'
+            },
+            success: function(data){
+                var url = window.URL || window.webkitURL;
+                var imageUrl = url.createObjectURL(data);
+                $("#screenshot").attr("src", imageUrl);
+                refresh_screenshot()
+            },
+            error:function(){
+                console.error("Failed to get screenshot");
+            }
+        });
     }
 
     $(document).ready(function () {
-        setInterval(refresh_screenshot, 200);
+        refresh_screenshot()
     });
+
     $("#upgrade").click(function () {
         console.log("Upgrade")
         $.post(
             '/upgrade', {}
         )
-    })
+    });
 </script>
 </body>
 </html>

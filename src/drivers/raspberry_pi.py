@@ -31,8 +31,12 @@ def make_serial(c) -> serial.Serial:
 
 def write_command(s, c, timeout=1):
     logging.debug("Writing command: " + c)
-    s.write(c.encode('utf-8'))
+    try:
+        s.write(c.encode('utf-8'))
     # TODO: timeout
+    except serial.serialutil.SerialException as e:
+        logging.error("Error writing to serial port", exc_info=e)
+        return False
 
 class RaspberryPiChassisDriver(ChassisDriver):
     def __init__(self):
