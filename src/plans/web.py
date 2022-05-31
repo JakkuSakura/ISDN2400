@@ -22,8 +22,9 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class ScreenshotHandler(tornado.web.RequestHandler):
-    def initialize(self, arm_driver: ArmDriver):
+    def initialize(self, arm_driver: ArmDriver, enable_detect: bool):
         self.arm_driver = arm_driver
+        self.enable_detect = enable_detect
 
     def get_focus_range(self, width, height, results):
         if len(results) == 0:
@@ -40,7 +41,12 @@ class ScreenshotHandler(tornado.web.RequestHandler):
 
     async def get(self):
         image = self.arm_driver.capture_image_raw()
-        annotated, results = detect(image)
+        if self.enable_detect:
+            annotated, results = detect(image)
+        else:
+            annotated = image
+            results = []
+
         x_min, y_min, x_max, y_max = self.get_focus_range(image.shape[0], image.shape[1], results)
         logger.info("Result %s %s %s %s %s", results, x_min, y_min, x_max, y_max)
         cropped = annotated[y_min:y_max, x_min:x_max]
@@ -100,14 +106,14 @@ class UpgradeHandler(tornado.web.RequestHandler):
         await self.finish()
         os.execv(sys.executable, args)
 
-def make_app(chassis_driver: ChassisDriver, arm_driver: ArmDriver):
+def make_app(chassis_driver: ChassisDriver, arm_driver: ArmDriver, enable_detect=False):
     settings = {
         'template_path': os.path.join(__file__, '..', '..', '..', 'template'),
         'static_path': os.path.join(__file__, '..', '..', '..', 'static'),
     }
     return tornado.web.Application([
         (r"/", MainHandler),
-        (r"/screenshot", ScreenshotHandler, dict(arm_driver=arm_driver)),
+        (r"/screenshot", ScreenshotHandler, dict(arm_driver=arm_driver, enable_detect=enable_detect)),
         (r"/move", MovementHandler, dict(chassis=chassis_driver)),
         (r"/rotate", RotationHandler, dict(chassis=chassis_driver)),
         (r"/arm", ArmVerticalHandler, dict(arm=arm_driver)),

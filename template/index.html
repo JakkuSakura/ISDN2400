@@ -38,43 +38,60 @@
   <button id="upgrade">Upgrade program</button>
 </div>
 <script>
-    function on_joystick_change_left(jsk) {
-        console.log(`chassis dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
+    var jsk_ludx = 0;
+    var jsk_ludy = 0;
+
+    function on_joystick_change_left() {
+        console.log(`chassis udx ${jsk_ludx} udy ${jsk_ludy}`);
         $.post(
             '/move', {
-                udx: jsk.udx,
-                udy: -jsk.udy
+                udx: jsk_ludx,
+                udy: -jsk_ludy
             }
         )
     }
+    setInterval(on_joystick_change_left, 1000);
 
-    function on_joystick_change_right(jsk) {
-        console.log(`arm dx ${jsk.dx} dy ${jsk.dy} udx ${jsk.udx} udy ${jsk.udy}`);
-        $.post(
-            '/rotate', {
-                speed: jsk.udx
-            }
-        )
+    var jsk_rudx = 0;
+    var jsk_rudy = 0;
+    function on_joystick_change_right() {
+        console.log(`arm udx ${jsk_rudx} udy ${jsk_rudy}`);
+        if (Math.pow(jsk_ludx * jsk_ludx + jsk_ludy * jsk_ludy, 2) < 0.5) {
+          $.post(
+              '/rotate', {
+                  speed: jsk_rudx
+              }
+          );
+        }
+
         $.post(
             '/arm', {
-                speed: -jsk.udy
+                speed: -jsk_rudy
             }
         )
     }
+    setInterval(on_joystick_change_right, 1000);
+
 
     var joystick_left = new JoyStick({
         radius: 80,
         x: window.innerWidth / 2 - 180,
         y: window.innerHeight / 2,
         inner_radius: 70,
-        callback: on_joystick_change_left
+        callback: function (jsk) {
+            jsk_ludx = jsk.udx;
+            jsk_ludy = jsk.udy;
+        }
     });
     var joystick_right = new JoyStick({
         radius: 80,
         x: window.innerWidth / 2 + 180,
         y: window.innerHeight / 2,
         inner_radius: 70,
-        callback: on_joystick_change_right
+        callback: function (jsk) {
+            jsk_rudx = jsk.udx;
+            jsk_rudy = jsk.udy;
+        }
     });
 
     function refresh_screenshot() {
@@ -106,6 +123,7 @@
             '/upgrade', {}
         )
     });
+
 </script>
 </body>
 </html>
