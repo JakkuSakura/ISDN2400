@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import math
 
@@ -18,51 +19,66 @@ import time
 'S']:#stop
 """
 ser = {}
+
+SERIAL_PORT = '/dev/ttyUSB0'
 def make_serial(c) -> serial.Serial:
     if c in ser:
         return ser[c]
     ser[c] = serial.Serial(c, 9600, timeout=1)
     return ser[c]
 
+def write_command(s, c, timeout=1):
+    logging.debug("Writing command: " + c)
+    s.write(c.encode('utf-8'))
+    # TODO: timeout
+
 class RaspberryPiChassisDriver(ChassisDriver):
     def __init__(self):
         self.logger = logging.getLogger(f"RaspberryPiChassisDriver")
-        self.serial = make_serial('/dev/ttyACM0')
+        self.serial = make_serial(SERIAL_PORT)
 
     async def move(self, direction: float, speed: float, distance: float = -1.0):
         self.logger.debug('move %s %s %s', direction, speed, distance)
         if speed == 0:
-            self.serial.write('s')
+            write_command(self.serial, 'S')
         elif -math.pi / 4 < direction < math.pi / 4:
-            self.serial.write('f')
+            write_command(self.serial, 'f')
         elif math.pi / 4 < direction < math.pi * 3 / 4:
-            self.serial.write('l')
+            write_command(self.serial, 'l')
         elif - math.pi * 3 / 4 < direction < - math.pi / 4:
-            self.serial.write('r')
+            write_command(self.serial, 'r')
         else:
-            self.serial.write('b')
-
+            write_command(self.serial, 'b')
 
     async def rotate(self, speed: float):
         self.logger.debug('rotate %s', speed)
         if speed > 0:
-            self.serial.write('L')
+            write_command(self.serial, 'L')
         else:
-            self.serial.write('R')
+            write_command(self.serial, 'R')
+
+
+def serv(servo, speed) -> str:  # let the servo turn untill next servo action
+    return str(servo) + '-' + str(speed) + '\n'
 
 
 class RaspberryPiArmDriver(ArmDriver):
     def __init__(self, camera_id):
         self.logger = logging.getLogger(f"RaspberryPiArmDriver({camera_id})")
         self.camera = cv2.VideoCapture(camera_id)
-        self.serial = make_serial('/dev/ttyACM0')
+        self.serial = make_serial(SERIAL_PORT)
+
     async def arm_up(self, speed):
         self.logger.debug('arm up %s', speed)
-        pass
+        for i in range(1, 4):
+            write_command(self.serial, serv(i, speed))
+            await asyncio.sleep(0.1)
 
     async def arm_spray(self, time):
         self.logger.debug('arm spray %s', time)
-        pass
+        write_command(self.serial, 'on')
+        await asyncio.sleep(time)
+        write_command(self.serial, 'off')
 
     def capture_image_raw(self):
         self.logger.debug('capture image raw')
