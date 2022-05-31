@@ -24,5 +24,5 @@ class ArmDriver:
         pass
 
     def capture_image_raw(self):
-        self.logger.debug('capture image')
+        logger.debug('capture image')
         return np.zeros((600, 800, 3), np.uint8)

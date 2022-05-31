@@ -3,6 +3,8 @@ import logging
 import math
 
 import cv2
+import numpy as np
+
 from drivers import ArmDriver, ChassisDriver
 from PIL import Image
 
@@ -83,4 +85,9 @@ class RaspberryPiArmDriver(ArmDriver):
     def capture_image_raw(self):
         self.logger.debug('capture image raw')
         return_value, image = self.camera.read()
-        return image
+        self.logger.debug('capture image raw: %s', return_value)
+        if return_value:
+            return image
+        else:
+            return np.zeros((600, 800, 3), np.uint8)
+
