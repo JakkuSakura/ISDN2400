@@ -38,9 +38,10 @@ def write_command(s: serial.Serial, c, timeout=1):
             s.write((c + '\n').encode('utf-8'))
         s.flush()
         time.sleep(0.05)
-        l = s.readable()
-        if l:
-            r = s.read(l)
+        while True:
+            r = s.readline()
+            if not r:
+                break
             logging.debug("Read echo: %s", str(r))
     # TODO: timeout
     except serial.serialutil.SerialException as e:
@@ -86,9 +87,8 @@ class RaspberryPiArmDriver(ArmDriver):
         # speed_min = 0
         # speed_max = 3000
         speed_mid, speed_spread = {
-            1: {
-                (1500, 200)
-            }
+            1: (1500, -200)
+
         }[servo]
 
         return str(servo) + '-' + str(int(speed_mid + speed * speed_spread))
@@ -97,7 +97,7 @@ class RaspberryPiArmDriver(ArmDriver):
         self.logger.debug('arm up %s', speed)
         if abs(speed) > 0.5:
             write_command(self.serial, self.servo_command(1, speed))
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
             write_command(self.serial, self.servo_command(1, 0))
         else:
             write_command(self.serial, self.servo_command(1, 0))
