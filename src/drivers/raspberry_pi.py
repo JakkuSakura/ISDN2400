@@ -27,21 +27,21 @@ SERIAL_PORT = '/dev/ttyUSB0'
 def make_serial(c) -> serial.Serial:
     if c in ser:
         return ser[c]
-    ser[c] = serial.Serial(c, 9600, timeout=1)
-    return ser[c]
+    s = serial.Serial(c, 9600, timeout=1)
+
+    ser[c] = s
+    return s
 
 
 def write_command(s: serial.Serial, c, timeout=1):
     logging.debug("Writing command: %s", c)
     try:
-        for i in range(3):
+        for i in range(1):
             s.write((c + '\n').encode('utf-8'))
         s.flush()
-        time.sleep(0.05)
-        while True:
-            r = s.readline()
-            if not r:
-                break
+
+        r = s.read_all()
+        if r:
             logging.debug("Read echo: %s", str(r))
     # TODO: timeout
     except serial.serialutil.SerialException as e:
@@ -56,6 +56,7 @@ class RaspberryPiChassisDriver(ChassisDriver):
 
     async def move(self, direction: float, speed: float, distance: float = -1.0):
         self.logger.debug('move %s %s %s', direction, speed, distance)
+        begin = time.time()
         if abs(speed) < 0.5:
             write_command(self.serial, 'S')
         elif -math.pi / 4 < direction < math.pi / 4:
@@ -66,15 +67,18 @@ class RaspberryPiChassisDriver(ChassisDriver):
             write_command(self.serial, 'r')
         else:
             write_command(self.serial, 'b')
+        duration = time.time() - begin
+        self.logger.debug('move %s %s %s time: %ss', direction, speed, distance, duration)
+
 
     async def rotate(self, speed: float):
         self.logger.debug('rotate %s', speed)
         if abs(speed) < 0.5:
             write_command(self.serial, 'S')
         elif speed > 0:
-            write_command(self.serial, 'R')
-        else:
             write_command(self.serial, 'L')
+        else:
+            write_command(self.serial, 'R')
 
 
 class RaspberryPiArmDriver(ArmDriver):
@@ -87,7 +91,9 @@ class RaspberryPiArmDriver(ArmDriver):
         # speed_min = 0
         # speed_max = 3000
         speed_mid, speed_spread = {
-            1: (1500, -200)
+            1: (1500, -200),
+            2: (1500, 200),
+            3: (1500, 0),
 
         }[servo]
 
@@ -95,12 +101,13 @@ class RaspberryPiArmDriver(ArmDriver):
 
     async def arm_up(self, speed):
         self.logger.debug('arm up %s', speed)
+        servos = [1, 2, 3]
         if abs(speed) > 0.5:
-            write_command(self.serial, self.servo_command(1, speed))
-            await asyncio.sleep(0.5)
-            write_command(self.serial, self.servo_command(1, 0))
+            for s in servos:
+                write_command(self.serial, self.servo_command(s, speed))
         else:
-            write_command(self.serial, self.servo_command(1, 0))
+            for s in servos:
+                write_command(self.serial, self.servo_command(s, 0))
 
     async def arm_spray(self, time):
         self.logger.debug('arm spray %s', time)
