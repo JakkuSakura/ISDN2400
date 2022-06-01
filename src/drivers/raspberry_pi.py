@@ -90,18 +90,31 @@ class RaspberryPiArmDriver(ArmDriver):
     def servo_command(self, servo: int, speed: float):
         # speed_min = 0
         # speed_max = 3000
-        speed_mid, speed_spread = {
-            1: (1450, -300),
-            2: (1520, 500),
-            3: (1500, 200),
+        # 1570
+        speed_mid, speed_spread_down, speed_spread_up = {
+            1: (1550, 150, 200),
+            # 2: (1520, 500, 500),
+            3: (1500, 100, 100),
 
         }[servo]
 
-        return str(servo) + '-' + str(int(speed_mid + speed * speed_spread))
+        if speed > 0:
+            code = speed_mid + speed * speed_spread_up
+        else:
+            code = speed_mid + speed * speed_spread_down
 
-    async def arm_up(self, speed):
+        return str(servo) + '-' + str(int(code))
+
+    async def servo(self, servo: int, speed: float):
+        self.logger.debug('servo %s %s', servo, speed)
+        if abs(speed) > 0.5:
+            write_command(self.serial, self.servo_command(servo, speed))
+        else:
+            write_command(self.serial, self.servo_command(servo, 0))
+
+    async def arm(self, speed):
         self.logger.debug('arm up %s', speed)
-        servos = [1, 2]
+        servos = [1, 3]
         if abs(speed) > 0.5:
             for s in servos:
                 write_command(self.serial, self.servo_command(s, speed))
@@ -109,7 +122,7 @@ class RaspberryPiArmDriver(ArmDriver):
             for s in servos:
                 write_command(self.serial, self.servo_command(s, 0))
 
-    async def arm_spray(self, speed):
+    async def spray(self, speed):
         self.logger.debug('arm spray %s', speed)
         if speed > 0:
             write_command(self.serial, 'on')

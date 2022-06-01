@@ -13,9 +13,9 @@ async def process(chassis: RaspberryPiChassisDriver, arm: RaspberryPiArmDriver, 
     elif cmd == 'rotate':
         await chassis.rotate(float(spt[1]))
     elif cmd == 'spray':
-        await arm.arm_spray(float(spt[1]))
+        await arm.spray(float(spt[1]))
     elif cmd == 'arm':
-        await arm.arm_up(float(spt[1]))
+        await arm.arm(float(spt[1]))
     else:
         raise Exception("unknown command: " + cmd)
 

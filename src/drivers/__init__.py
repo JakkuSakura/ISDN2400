@@ -15,11 +15,15 @@ class ChassisDriver:
 
 
 class ArmDriver:
-    async def arm_up(self, speed):
+    async def arm(self, speed):
         logger.debug('arm up %s', speed)
         pass
 
-    async def arm_spray(self, speed):
+    async def servo(self, servo: int, speed: float):
+        logger.debug('servo %s %s', servo, speed)
+        pass
+
+    async def spray(self, speed):
         logger.debug('arm spray %s', speed)
         pass
 

@@ -50,12 +50,13 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class ScreenshotHandler(tornado.web.RequestHandler):
-    def initialize(self, chassis_driver: ChassisDriver, arm_driver: ArmDriver, enable_detect: bool,
+    def initialize(self, chassis_driver: ChassisDriver, arm_driver: ArmDriver, enable_detect: bool, auto_control: bool,
                    runner: BackendRunnerData):
         self.chassis_driver = chassis_driver
         self.arm_driver = arm_driver
         self.enable_detect = enable_detect
         self.runner = runner
+        self.auto_control = auto_control
 
     def get_focus_range(self, width, height, results):
         if len(results) == 0:
@@ -83,15 +84,14 @@ class ScreenshotHandler(tornado.web.RequestHandler):
             if tag == 'person':
                 center_ux = (xyxy[0] + xyxy[2]) / width
                 speed = -float(center_ux * 2 - 1)
+                if abs(speed) > 0.3:
+                    async def rotate():
+                        await self.chassis_driver.rotate(speed)
+                        await asyncio.sleep(0.1)
+                        await self.chassis_driver.rotate(0)
 
-                async def rotate():
-                    await self.chassis_driver.rotate(speed)
-                    await asyncio.sleep(0.1)
-                    await self.chassis_driver.rotate(0)
-
-
-                await self.runner.submit("Detected person. Rotating " + str(speed), rotate())
-                return True
+                    await self.runner.submit("Detected person. Rotating " + str(speed), rotate())
+                    return True
 
         async def stop():
             await self.chassis_driver.rotate(0)
@@ -108,13 +108,14 @@ class ScreenshotHandler(tornado.web.RequestHandler):
         else:
             annotated = image
             results = []
-        spray = self.spray(results)
-        if self.enable_detect:
+        if self.enable_detect and self.auto_control:
+            spray = self.spray(results)
             if spray:
-                await self.arm_driver.arm_spray(1.0)
+                await self.arm_driver.spray(1.0)
             else:
-                await self.arm_driver.arm_spray(0.0)
-        await self.rotate_movement(annotated.shape[1], results)
+                await self.arm_driver.spray(0.0)
+            await self.rotate_movement(annotated.shape[1], results)
+
         x_min, y_min, x_max, y_max = self.get_focus_range(image.shape[0], image.shape[1], results)
         logger.info("Result %s %s %s %s %s", results, x_min, y_min, x_max, y_max)
         # cropped = annotated[y_min:y_max, x_min:x_max]
@@ -160,7 +161,18 @@ class ArmVerticalHandler(tornado.web.RequestHandler):
 
     async def post(self):
         speed = float(self.get_argument('speed'))
-        await self.arm.arm_up(speed)
+        await self.arm.arm(speed)
+        await self.finish()
+
+
+class ArmServoHandler(tornado.web.RequestHandler):
+    def initialize(self, arm: ArmDriver):
+        self.arm = arm
+
+    async def post(self):
+        servo = int(self.get_argument('servo'))
+        speed = float(self.get_argument('speed'))
+        await self.arm.servo(servo, speed)
         await self.finish()
 
 
@@ -171,7 +183,7 @@ class SprayHandler(tornado.web.RequestHandler):
     async def post(self):
         speed = float(self.get_argument('speed'))
 
-        await self.arm.arm_spray(speed)
+        await self.arm.spray(speed)
         await self.finish()
 
 
@@ -198,10 +210,12 @@ def make_app(chassis_driver: ChassisDriver, arm_driver: ArmDriver, enable_detect
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/screenshot", ScreenshotHandler,
-         dict(chassis_driver=chassis_driver, arm_driver=arm_driver, runner=runner, enable_detect=enable_detect)),
+         dict(chassis_driver=chassis_driver, arm_driver=arm_driver, runner=runner, enable_detect=enable_detect,
+              auto_control=False)),
         (r"/move", MovementHandler, dict(chassis=chassis_driver)),
         (r"/rotate", RotationHandler, dict(chassis=chassis_driver)),
         (r"/arm", ArmVerticalHandler, dict(arm=arm_driver)),
+        (r"/servo", ArmServoHandler, dict(arm=arm_driver)),
         (r'/spray', SprayHandler, dict(arm=arm_driver)),
         (r'/task', BackendRunner, dict(data=runner)),
         (r"/upgrade", UpgradeHandler)
