@@ -91,9 +91,9 @@ class RaspberryPiArmDriver(ArmDriver):
         # speed_min = 0
         # speed_max = 3000
         speed_mid, speed_spread = {
-            1: (1500, -200),
-            2: (1500, 200),
-            3: (1500, 0),
+            1: (1450, -300),
+            2: (1520, 500),
+            3: (1500, 200),
 
         }[servo]
 
@@ -101,7 +101,7 @@ class RaspberryPiArmDriver(ArmDriver):
 
     async def arm_up(self, speed):
         self.logger.debug('arm up %s', speed)
-        servos = [1, 2, 3]
+        servos = [1, 2]
         if abs(speed) > 0.5:
             for s in servos:
                 write_command(self.serial, self.servo_command(s, speed))
@@ -109,11 +109,12 @@ class RaspberryPiArmDriver(ArmDriver):
             for s in servos:
                 write_command(self.serial, self.servo_command(s, 0))
 
-    async def arm_spray(self, time):
-        self.logger.debug('arm spray %s', time)
-        write_command(self.serial, 'on')
-        await asyncio.sleep(time)
-        write_command(self.serial, 'off')
+    async def arm_spray(self, speed):
+        self.logger.debug('arm spray %s', speed)
+        if speed > 0:
+            write_command(self.serial, 'on')
+        else:
+            write_command(self.serial, 'off')
 
     def capture_image_raw(self):
         self.logger.debug('capture image raw')

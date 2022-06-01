@@ -35,6 +35,7 @@
   </div>
   <img src="/screenshot" alt="Screenshot" id="screenshot"/>
   <br/>
+  <div id="task"></div>
   <button id="upgrade">Upgrade program</button>
 </div>
 <script>
@@ -88,16 +89,10 @@
         else if (e.keyCode === 32) // space
         {
             $.post(
-                '/move', {
-                    udx: 0,
-                    udy: 0
+                '/spray', {
+                    speed: 1
                 }
             );
-            $.post(
-                '/arm', {
-                    speed: 0
-                }
-            )
         } else if (e.keyCode === 105) // i
             $.post(
                 '/arm', {
@@ -127,6 +122,12 @@
                 speed: 0
             }
         )
+
+        $.post(
+            '/spray', {
+                speed: 0
+            }
+        );
     })
 
     function refresh_screenshot() {
@@ -140,6 +141,9 @@
                 var url = window.URL || window.webkitURL;
                 var imageUrl = url.createObjectURL(data);
                 $("#screenshot").attr("src", imageUrl);
+                $.get("/task", function (data) {
+                    $("#task").text(data);
+                });
                 refresh_screenshot()
             },
             error: function () {

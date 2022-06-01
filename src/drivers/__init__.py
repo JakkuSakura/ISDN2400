@@ -19,8 +19,8 @@ class ArmDriver:
         logger.debug('arm up %s', speed)
         pass
 
-    async def arm_spray(self, time):
-        logger.debug('arm spray %s', time)
+    async def arm_spray(self, speed):
+        logger.debug('arm spray %s', speed)
         pass
 
     def capture_image_raw(self):
